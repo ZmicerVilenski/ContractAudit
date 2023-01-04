@@ -1,10 +1,13 @@
-# Contract audit
+# Contract test audit
+
+![SCA](./sca.jpg)
 
 https://hackmd.io/@idealatom/Sk1YbYH7j
 
 Audit date 04/01/2023
 
-Audit Methodology: Manual review combined with static analysis
+Audit Methodology: Manual review combined with static analysis \
+(Fuzzing and symbolic analysis not used as complete unit tests - because these tests are time consuming, it is unnecessary for a test task, but mandatory for production)
 
 Contract SHA256 Checksum:
 78d53b77fddf4da7d4ddb5a2088f6437e12a0ef6cac27da24e393b61fd5e5bcd
