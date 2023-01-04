@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0; // SWC-103 Ethereum Smart Contract Best Practices - Lock pragmas to specific compiler version
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-// Нет комментариев
 interface IRewardToken is IERC20 {
     function rewardUser(address owner, uint256 amount) external;
 }
 
 contract Rewardable {
-    using SafeMath for uint256; // Не используется
+    using SafeMath for uint256;
 
-    error NothingForClaim(); // Проверить сообщение
+    error NothingForClaim();
 
-    // SWC-108 Ethereum Smart Contract Best Practices - Explicitly mark visibility in functions and state variables
     struct Reward {
         uint256 timestamp;
         uint256 amount;
@@ -32,22 +30,19 @@ contract Rewardable {
     uint256 public _rewardsAmount;
 
     // user => reward
-    mapping(address => Reward[]) internal _rewards; // Использование массивов с перебором?
+    mapping(address => Reward[]) internal _rewards;
 
     constructor(address rewardToken, address paymentToken) {
         REWARD_TOKEN = IRewardToken(rewardToken);
         PAYMENT_TOKEN = IERC20(paymentToken);
     }
 
-    // Можно заклэймить за другого
     function claim(address user) external {
         uint256 length = _rewards[user].length;
         if (length == 0) revert NothingForClaim();
 
-        // Перебор массива :(
-        // SWC-113 DoS with Failed Call
         for (uint256 i = 0; i < length; i++) {
-            Reward storage reward = _rewards[user][length - i]; // Зачем стораж? // Индекс массива должен быть меньше на 1 от длины, а в текущем коде первый индекс будет = длине массива
+            Reward storage reward = _rewards[user][length - i];
 
             withdrawLastDeposit(user, reward.amount);
             payRewards(user, reward);
@@ -58,9 +53,7 @@ contract Rewardable {
 
     function payRewards(address user, Reward memory reward) internal {
         uint256 random = uint256(
-            keccak256(abi.encodePacked(block.timestamp, SEED)) // Можно манипулировать
-            //SWC-116 Block values as a proxy for time
-            //SWC-120 Weak Sources of Randomness from Chain Attributes
+            keccak256(abi.encodePacked(block.timestamp, SEED))
         );
         uint256 daysDelta = (block.timestamp - reward.timestamp) / 1 days;
         uint256 userReward = (reward.amount / PCT_DENOMINATOR) *
@@ -71,12 +64,7 @@ contract Rewardable {
     }
 
     function withdrawLastDeposit(address user, uint256 amount) internal {
-        _rewards[user].pop(); // Не нужно удалять отдельный элемент массива по 2м причинам.
-        //1. массив в родительской функции claim() и так очищается после цикла.
-        //2. в той же родительской функции идет перебор массива по индексу (начиная с верхнего и по одному в низ), а удаляя элементы массива будет нарушена последовательность перебора эл. массива.
-        //И реализацию лучше изменить, в цикле просчитать общую сумму вознаграждения и трансфер токенов сделать один раз, после чего удалить массив.
-        //Не понятно задумано ли так или нет. Но реварды, у которых еще не накопилось дней, будут удалены вместе со всеми. Возможно такие реварды нужно было оставлять.
-
+        _rewards[user].pop();
         _rewardsAmount -= amount;
         PAYMENT_TOKEN.transfer(user, amount);
     }
@@ -86,7 +74,7 @@ contract Rewardable {
         address payer,
         uint256 amount
     ) internal {
-        PAYMENT_TOKEN.transferFrom(payer, address(this), amount); // реэнтранси
+        PAYMENT_TOKEN.transferFrom(payer, address(this), amount);
         _rewardsAmount += amount;
 
         _rewards[user].push(Reward(block.timestamp, amount));
@@ -96,8 +84,8 @@ contract Rewardable {
 contract Marketplace is Rewardable {
     error AlreadyOwner();
     error NotItemOwner();
-    error InvalidSale(); // Одна ошибка на разные случаи
-    error AlreadyOnSale(); // Неиспользуемая ошибка
+    error InvalidSale();
+    error AlreadyOnSale();
 
     struct ItemSale {
         address seller;
@@ -105,7 +93,7 @@ contract Marketplace is Rewardable {
         uint256 startTime;
     }
 
-    IERC721 internal NFT_TOKEN; // можно добавить immutable
+    IERC721 internal NFT_TOKEN;
 
     // nft tokenId => item
     mapping(uint256 => ItemSale) public items;
@@ -141,9 +129,6 @@ contract Marketplace is Rewardable {
 
         ItemSale storage item = items[tokenId];
         assembly {
-            // Зачем эсэмбли? Если изменится расположение полей структуры, то этот код перестанет работать, т.к. используется номер слота.
-            // Проверить газ без асэмблирования
-            // Tested Code MUST NOT contain the assembly {} instruction unless it meets the Set of Overriding Requirements
             let s := add(item.slot, 2)
             sstore(s, add(sload(s), postponeSeconds))
         }

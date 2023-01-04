@@ -13,3 +13,5 @@ Audit contracts for possible vulnerabilities, bugs, problematic and nonoptimal b
 - recommendations for fixing a problem
 
 https://hackmd.io/@idealatom/Sk1YbYH7j
+
+npx hardhat test
