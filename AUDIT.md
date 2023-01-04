@@ -2,60 +2,86 @@
 
 https://hackmd.io/@idealatom/Sk1YbYH7j
 
+Audit date 04/01/2023
+
+Audit Methodology: Manual review combined with static analysis
+
+Contract SHA256 Checksum:
+78d53b77fddf4da7d4ddb5a2088f6437e12a0ef6cac27da24e393b61fd5e5bcd
+
 ![HIGH](https://placehold.co/15x15/d00000/d00000.png) `HIGH`\
 ![MED](https://placehold.co/15x15/ffb703/ffb703.png) `MEDIUM`\
-![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `LOW`
+![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `LOW`\
+![INFO](https://placehold.co/15x15/48cae4/48cae4.png) `INFORMATIONAL`
 
-- ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `No comments in code`
+---
 
-- ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `No documentation for contract (only specification)`
+- ![INFO](https://placehold.co/15x15/48cae4/48cae4.png) `No comments in code`
 
-- ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `No NatSpec (Ethereum Natural Language Specification Format)`
+- ![INFO](https://placehold.co/15x15/48cae4/48cae4.png) `No documentation for contract (only specification)`
+
+- ![INFO](https://placehold.co/15x15/48cae4/48cae4.png) `No NatSpec (Ethereum Natural Language Specification Format)`
 
 - ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `Incomprehensible marketplace logic. When put up for sale, NFT is not blocked by the marketplace and may not belong to the seller or be approved by the time of sale.`
+
+---
 
 - ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `SWC-103 Ethereum Smart Contract Best Practices - Lock pragmas to specific compiler version`
 
 ```shell
-3 pragma solidity ^0.8.0;
+3  |    pragma solidity ^0.8.0;
 ```
 
-- ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `It is not clear why this interface is imported if there is no call to the functions described in it.`
+---
+
+- ![INFO](https://placehold.co/15x15/48cae4/48cae4.png) `Imported interface that is not used in calls (Gas optimization)`
 
 ```shell
-6 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+6  |    import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 ```
 
-- ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `The library is not used in code. And in general, Solidity is not needed for the announced version`
+---
+
+- ![INFO](https://placehold.co/15x15/48cae4/48cae4.png) `The library is not used in code. And in general, SafeMath is not needed for the announced version of Solidity. "unchecked" is not using in code (Gas optimization)`
 
 ```shell
-17 using SafeMath for uint256;
+8  |    import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+...
+17 |    using SafeMath for uint256;
 ```
 
-- ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `SWC-108 Ethereum Smart Contract Best Practices - Explicitly mark visibility in functions and state variables`
+---
+
+- ![INFO](https://placehold.co/15x15/48cae4/48cae4.png) `SWC-108 Ethereum Smart Contract Best Practices - Explicitly mark visibility in functions and state variables`
 
 ```shell
-21 struct Reward {
+21 |    struct Reward {
 ```
 
-- ![HIGH](https://placehold.co/15x15/d00000/d00000.png) `It is possible to call a function for another user.`
+---
+
+- ![HIGH](https://placehold.co/15x15/d00000/d00000.png) `It is possible to call a function for another user (Access control).`
 
 ```shell
-42 function claim(address user) external {
+42 |    function claim(address user) external {
 ```
 
-- ![HIGH](https://placehold.co/15x15/d00000/d00000.png) `SWC-113 DoS with Failed Call. Iterating over an array with a call to the transfer functions in a loop can lead to an excess of gas per block.`
+---
 
-  `An invalid array index was also used. The last element of the array has index [length - 1], but the first iteration of [length - i] with i=0 will out of array index.`
+- ![HIGH](https://placehold.co/15x15/d00000/d00000.png) `SWC-113. Iterating over an array with a call of transfer() function can lead to an excess of gas per block (DoS with Failed Call).`
 
-  `And for some reason, the reward variable is made as storage. It is better to do it memory, because in this function, it does not change. Excess gas is being used.`
+  ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `An invalid array index was also used. The last element of the array has index [length - 1], but the first iteration of [length - i] with i=0 will out of array index (Bug).`
+
+  ![INFO](https://placehold.co/15x15/48cae4/48cae4.png) `Reward variable is made as storage. Variable is better to store in memory, because in this function, it does not change (Gas optimization).`
 
 ```shell
-46    for (uint256 i = 0; i < length; i++) {
-47        Reward storage reward = _rewards[user][length - i];
+46 |    for (uint256 i = 0; i < length; i++) {
+47 |        Reward storage reward = _rewards[user][length - i];
 ```
 
-- ![MED](https://placehold.co/15x15/ffb703/ffb703.png) `Block content manipulation`
+---
+
+- ![MED](https://placehold.co/15x15/ffb703/ffb703.png) ![HIGH](https://placehold.co/15x15/d00000/d00000.png) `Block content manipulation`
   `SWC-116 Block values as a proxy for time`
 
   `SWC-120 Weak Sources of Randomness from Chain Attributes`
@@ -63,22 +89,26 @@ https://hackmd.io/@idealatom/Sk1YbYH7j
   `Miners can manipulate the block date, for important operations recommended to use external sources of entropy (random numbers)`
 
 ```shell
-57 uint256 random = uint256(keccak256(abi.encodePacked(block.timestamp, SEED)));
+57 |    uint256 random = uint256(keccak256(abi.encodePacked(block.timestamp, SEED)));
 ```
+
+---
 
 - ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `Not needed to delete a single array element for 2 reasons:`
 
-  `1. the array in the parent function claim() is already cleared after the loop.`
+  `1. the array in the parent function claim() is already cleared after the loop (Bug).`
 
-  `2. In the same parent function, the array is iterated by index (starting from the top to the bottom), and deleting the elements of the array will violate the sequence of enumerating the elements of the array.`
+  `2. In the same parent function, the array is iterated by index (starting from the top to the bottom), and deleting the elements of the array will violate the sequence of enumerating the elements of the array (Bug).`
 
-  `And it is better to change the implementation, calculate the total amount of rewards in a loop and do the TRANSFER tokens ONCE, and then delete the array.`
+  ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `And it is better to change the implementation, calculate the total amount of rewards in a loop and do the TRANSFER tokens ONCE, and then delete the array (Gas optimization).`
 
-  `But in general, it's better to get rid of iterating over arrays. In most cases, using the EnumerableSet library is sufficient. Sometimes iteration functions can be thrown to the front or backend. But if iterating over the array is obligatorily, I would recommend using pagination. Add a parameter to the function with a limit on the number of iterations and control from the frontend, if there are not many elements in the array, call the function without a parameter, if there are many elements, call with a limit. And delete not the whole array, but element by element.`
+  ![HIGH](https://placehold.co/15x15/d00000/d00000.png) `But in general, it's better to get rid of iterating over arrays. In most cases, using the EnumerableSet library is sufficient. Sometimes iteration functions can be thrown to the front or backend. But if iterating over the array is obligatorily, I would recommend using pagination. Add a parameter to the function with a limit of iterations and if needed call with limitation (DoS).`
 
 ```shell
-66 _rewards[user].pop();
+66 |    _rewards[user].pop();
 ```
+
+---
 
 - ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `I would recommend transferring tokens after other operations (`
 
@@ -91,35 +121,44 @@ https://hackmd.io/@idealatom/Sk1YbYH7j
   `Since there is no implementation of PAYMENT_TOKEN, vulnerabilities are possible`
 
 ```shell
-73 PAYMENT_TOKEN.transferFrom(payer, address(this), amount);
+73 |    PAYMENT_TOKEN.transferFrom(payer, address(this), amount);
 ```
 
-- ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `One error() used in different cases`
+---
+
+- ![INFO](https://placehold.co/15x15/48cae4/48cae4.png) `One error() used in different cases`
 
 ```shell
-84 error InvalidSale();
+84 |    error InvalidSale();
 ```
 
-- ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `Unused error()`
+---
+
+- ![INFO](https://placehold.co/15x15/48cae4/48cae4.png) `Unused error()`
 
 ```shell
-85 error AlreadyOnSale();
+85 |    error AlreadyOnSale();
 ```
 
-- ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `It's more efficient to use immutable for NFT_TOKEN`
+---
+
+- ![INFO](https://placehold.co/15x15/48cae4/48cae4.png) `It's more efficient to use immutable for NFT_TOKEN (Gas optimization)`
 
 ```shell
-93 IERC721 internal NFT_TOKEN;
-
+93 |    IERC721 internal NFT_TOKEN;
 ```
+
+---
 
 - ![LOW](https://placehold.co/15x15/2d6a4f/2d6a4f.png) `Tested Code MUST NOT contain the assembly {} instruction unless it meets the Set of Overriding Requirements.`
 
   `If the location of the structure fields changes, then this code will stop working, because slot number is used.`
 
 ```shell
-124 assembly {
-125   let s := add(item.slot, 2)
-126   sstore(s, add(sload(s), postponeSeconds))
-127 }
+124|    assembly {
+125|      let s := add(item.slot, 2)
+126|      sstore(s, add(sload(s), postponeSeconds))
+127|    }
 ```
+
+---
